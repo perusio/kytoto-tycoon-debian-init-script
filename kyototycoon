@@ -16,12 +16,15 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/ktserver
 RUNDIR=/var/run/kyototycoon
 PIDFILE=$RUNDIR/kyototycoon.pid
-LOGFILE="/var/log/ktserver.log"
+LOGFILE="/var/log/kyototycoon/ktserver.log"
 DAEMON_ARGS="-dmn"
 NAME=kyototycoon
 DESC=kyototycoon
 PORT=1978
 DATADIR="/var/lib/kyototycoon"
+CONFFILE="/etc/kyototycoon.conf"
+
+## User and group the daemon will run under.
 KT_USER=kyototycoon
 KT_GROUP=kyototycoon
 DATABASES=""
@@ -30,6 +33,17 @@ test -x $DAEMON || exit 0
 
 ## Source the default definitions.
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+## Check to see if the daemon is enabled.
+if [ $STARTUP != "1" ]; then
+    echo "To enable $NAME, edit /etc/default/$NAME and set STARTUP=1"
+    exit 0
+fi
+
+## Source the configuration file if it exists.
+if [ -r $CONFFILE ]; then
+    . $CONFFILE
+fi
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
