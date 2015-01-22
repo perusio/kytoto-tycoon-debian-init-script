@@ -1,0 +1,19 @@
+# -*-shell-script-*-
+# Check the man page of ktserver for the options.
+#
+
+## Set this to 1 to enable the daemon.
+STARTUP=0
+
+# Specifies the path of the log file.
+#LOG="/var/log/ktserver.log"
+
+# Specifying databases.
+# The best way to do that is through concatenation of the DATABASES variable.
+## One database.
+#DATABASES="$DATADIR/casket.kch#opts=l#bnum=20000000#msiz=256m#dfunit=8"
+## another.
+DATABASES="$DATABASES $DATADIR/vault.tch"
+
+# Specifiying other options.
+# OPTIONS="-th 4 -ls"
