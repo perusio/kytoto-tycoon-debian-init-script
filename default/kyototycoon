@@ -13,7 +13,7 @@ STARTUP=0
 ## One database.
 #DATABASES="$DATADIR/casket.kch#opts=l#bnum=20000000#msiz=256m#dfunit=8"
 ## another.
-DATABASES="$DATABASES $DATADIR/vault.tch"
+#DATABASES="$DATABASES $DATADIR/vault.kct"
 
 # Specifiying other options.
 # OPTIONS="-th 4 -ls"
