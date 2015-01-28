@@ -12,6 +12,18 @@
 #              multiple DB engines.
 ### END INIT INFO
 
+# Usage:
+# cp /etc/kyototycoon.conf /etc/kyototycoon_server1.conf
+# cp /etc/kyototycoon.conf /etc/kyototycoon_server2.conf
+# start all instances:
+# /etc/init.d/kyototycoon start
+# start one instance:
+# /etc/init.d/kyototycoon start server1
+# stop all instances:
+# /etc/init.d/kyototycoon stop
+# stop one instance:
+# /etc/init.d/kyototycoon stop server1
+
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/ktserver
 RUNDIR=/var/run/kyototycoon
@@ -22,7 +34,6 @@ NAME=kyototycoon
 DESC=kyototycoon
 PORT=1978
 DATADIR="/var/lib/kyototycoon"
-CONFFILE="/etc/kyototycoon.conf"
 
 ## User and group the daemon will run under.
 KT_USER=kyototycoon
@@ -40,10 +51,37 @@ if [ $STARTUP != "1" ]; then
     exit 0
 fi
 
-## Source the configuration file if it exists.
-if [ -r $CONFFILE ]; then
-    . $CONFFILE
-fi
+## Get all the configuration files.
+CONFFILES=(/etc/kyototycoon_*.conf)
+
+## Check for alternative configuration schema.
+if [ -r "${CONFFILES[0]}" ]; then
+    CONFIGS=()
+    for FILE in "${CONFFILES[@]}"; do
+        echo $FILE
+        ## Remove the prefix.
+        NAME=${FILE#/etc/}
+        ## Remove the suffix.
+        NAME=${NAME%.conf}
+
+        ## Check optional second param
+        if [ $# -ne 2 ]; then
+            # add to config array
+            CONFIGS+=($NAME)
+        elif [ "memcached_$2" == "$NAME" ]; then
+            # use only one memcached
+            CONFIGS=($NAME)
+            break;
+        fi;
+    done;
+
+    if [ ${#CONFIGS[@]} == 0 ]; then
+        echo "Config not exist for: $2" >&2
+        exit 1
+    fi;
+else
+    CONFIGS=(kyototycoon)
+fi;
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -86,6 +124,7 @@ do_start () {
     if check_server_running; then
         echo -n $"Starting $DESC: "
         prepare_startup
+        echo yes
         $SU -l $KT_USER --shell=/bin/bash -c "$DAEMON $DAEMON_ARGS -port $PORT -log $LOGFILE -pid $PIDFILE $DATABASES" && return 0
     fi
 }
@@ -107,35 +146,50 @@ do_restart () {
     start
 }
 
-case "$1" in
-    start)
-        if do_start; then
-            echo  "$NAME."
-        else
-            echo "failed."
-        fi
-        ;;
-    stop)
-        if do_stop; then
-            echo "$NAME."
-        else
-            echo "failed."
-        fi
-        ;;
+## Loop over all configured servers.
+er_or=0
+CONFIG_NUM=${#CONFIGS[@]}
+for ((i=0; i < $CONFIG_NUM; i++)); do
+    NAME=${CONFIGS[${i}]}
+    PIDFILE="/var/run/${NAME}.pid"
+    ## Source the configuration.
+    . /etc/${NAME}.conf
 
-    restart|force-reload)
-        do_restart
-        ;;
-    status)
-        if get_daemon_status; then
-            echo "$DESC is running in port $PORT and PID $(pidof $DAEMON)."
-            exit 0
-        fi
-        ;;
-    *)
-        echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload|status}" >&2
-        exit 1
-        ;;
-esac
+    case "$1" in
+        start)
+            if do_start; then
+                echo  "$NAME."
+            else
+                echo "failed."
+            fi
+            ;;
+        stop)
+            if do_stop; then
+                echo "$NAME."
+            else
+                echo "failed."
+            fi
+            ;;
 
-exit 0
+        restart|force-reload)
+            do_restart
+            ;;
+        status)
+            if get_daemon_status; then
+                echo "$DESC is running in port $PORT and PID $(pidof $DAEMON)."
+                exit 0
+            fi
+            ;;
+        *)
+            echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload|status}" >&2
+            exit 1
+            ;;
+    esac
+done
+
+## Define the exit status based on the
+if [ "$er_or" -ne "0" ]; then
+    exit 2
+else
+    exit 0
+fi
