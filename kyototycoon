@@ -129,7 +129,7 @@ do_start () {
     fi
 }
 
-# Get the status of the daemon process.
+## Get the status of the daemon process.
 get_daemon_status () {
     check_server_running && return 0
 }
