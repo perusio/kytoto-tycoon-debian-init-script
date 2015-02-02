@@ -28,12 +28,13 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/ktserver
 RUNDIR=/var/run/kyototycoon
 PIDFILE=$RUNDIR/kyototycoon.pid
-LOGFILE="/var/log/kyototycoon/ktserver.log"
+LOGDIR=/var/log/kyototycoon
+LOGFILE="$LOGDIR/ktserver.log"
 DAEMON_ARGS="-dmn"
 NAME=kyototycoon
 DESC=kyototycoon
 PORT=1978
-DATADIR="/var/lib/kyototycoon"
+DATADIR=/var/lib/kyototycoon
 
 ## User and group the daemon will run under.
 KT_USER=kyototycoon

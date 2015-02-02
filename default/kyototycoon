@@ -6,7 +6,7 @@
 STARTUP=0
 
 # Specifies the path of the log file.
-#LOG="/var/log/ktserver.log"
+#LOG="$LOGDIR/ktserver.log"
 
 # Specifying databases.
 # The best way to do that is through concatenation of the DATABASES variable.
