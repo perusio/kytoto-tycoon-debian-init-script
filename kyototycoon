@@ -58,7 +58,6 @@ CONFFILES=(/etc/kyototycoon_*.conf)
 if [ -r "${CONFFILES[0]}" ]; then
     CONFIGS=()
     for FILE in "${CONFFILES[@]}"; do
-        echo $FILE
         ## Remove the prefix.
         NAME=${FILE#/etc/}
         ## Remove the suffix.
@@ -96,9 +95,11 @@ check_server_running (){
 
     if [ $count -eq 1 ]; then
         echo "$DESC is running in port $PORT and PID $(pidof $DAEMON)."
+        return 0
+    else
+        echo "$DESC is not running in port $PORT."
         return 1
     fi
-    return 0
 }
 
 ## Prepare the startup.
@@ -121,17 +122,9 @@ SU=/bin/su
 
 ## Start the server.
 do_start () {
-    if check_server_running; then
-        echo -n $"Starting $DESC: "
-        prepare_startup
-        echo yes
-        $SU -l $KT_USER --shell=/bin/bash -c "$DAEMON $DAEMON_ARGS -port $PORT -log $LOGFILE -pid $PIDFILE $DATABASES" && return 0
-    fi
-}
-
-## Get the status of the daemon process.
-get_daemon_status () {
-    check_server_running && return 0
+    echo -n $"Starting $DESC: "
+    prepare_startup
+    $SU -l $KT_USER --shell=/bin/bash -c "$DAEMON $DAEMON_ARGS -port $PORT -log $LOGFILE -pid $PIDFILE $DATABASES" && return 0
 }
 
 ## Stopping the server.
@@ -175,10 +168,7 @@ for ((i=0; i < $CONFIG_NUM; i++)); do
             do_restart
             ;;
         status)
-            if get_daemon_status; then
-                echo "$DESC is running in port $PORT and PID $(pidof $DAEMON)."
-                exit 0
-            fi
+            check_server_running
             ;;
         *)
             echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload|status}" >&2
