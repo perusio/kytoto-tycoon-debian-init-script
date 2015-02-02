@@ -142,8 +142,8 @@ do_stop () {
 
 ## Restarting the server.
 do_restart () {
-    stop
-    start
+    do_stop
+    do_start
 }
 
 ## Loop over all configured servers.
