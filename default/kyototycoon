@@ -5,9 +5,6 @@
 ## Set this to 1 to enable the daemon.
 STARTUP=0
 
-# Specifies the path of the log file.
-#LOG="$LOGDIR/ktserver.log"
-
 # Specifying databases.
 # The best way to do that is through concatenation of the DATABASES variable.
 ## One database.
