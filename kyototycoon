@@ -125,7 +125,7 @@ SU=/bin/su
 do_start () {
     echo -n $"Starting $DESC: "
     prepare_startup
-    $SU -l $KT_USER --shell=/bin/bash -c "$DAEMON $DAEMON_ARGS -port $PORT -log $LOGFILE -pid $PIDFILE $DATABASES" && return 0
+    $SU -l $KT_USER --shell=/bin/bash -c "$DAEMON $DAEMON_ARGS $OPTIONS -port $PORT -log $LOGFILE -pid $PIDFILE $DATABASES" && return 0
 }
 
 ## Stopping the server.
@@ -136,8 +136,9 @@ do_stop () {
 
 ## Restarting the server.
 do_restart () {
-    do_stop
-    do_start
+    echo -n $"Restarting $DESC: "
+    ## Send a SIGHUP to the running daemon for reloading/restart.
+    killproc -p $PIDFILE $NAME -SIGHUP
 }
 
 ## Loop over all configured servers.
@@ -145,7 +146,10 @@ er_or=0
 CONFIG_NUM=${#CONFIGS[@]}
 for ((i=0; i < $CONFIG_NUM; i++)); do
     NAME=${CONFIGS[${i}]}
+    ## PID file per server.
     PIDFILE="$RUNDIR/${NAME}.pid"
+    ## Log file per server.
+    LOGFILE="$LOGDIR/${NAME}.log"
     ## Source the configuration.
     . /etc/${NAME}.conf
 
@@ -156,6 +160,8 @@ for ((i=0; i < $CONFIG_NUM; i++)); do
             else
                 echo "failed."
             fi
+            ## Reset the options.
+            OPTIONS=''
             ;;
         stop)
             if do_stop; then
@@ -166,7 +172,11 @@ for ((i=0; i < $CONFIG_NUM; i++)); do
             ;;
 
         restart|force-reload)
-            do_restart
+            if do_restart; then
+                echo "$NAME."
+            else
+                echo "failed."
+            fi
             ;;
         status)
             check_server_running
